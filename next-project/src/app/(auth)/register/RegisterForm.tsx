@@ -21,11 +21,12 @@ import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
 import authApiRequest from "@/apiRequest/auth";
 import { handleErrorApi } from "@/lib/utils";
+import { useState } from "react";
 
 const RegisterForm = () => {
   const { toast } = useToast();
   const router = useRouter();
-
+  const [loading, setLoading] = useState<boolean>(false);
   const form = useForm<RegisterBodyType>({
     resolver: zodResolver(RegisterBody),
     defaultValues: {
@@ -38,6 +39,8 @@ const RegisterForm = () => {
 
   // 2. Define a submit handler.
   async function onSubmit(values: RegisterBodyType) {
+    if (loading) return;
+    setLoading(true);
     try {
       const result = await authApiRequest.register(values);
       toast({
@@ -47,6 +50,8 @@ const RegisterForm = () => {
       router.push("/me");
     } catch (error: any) {
       handleErrorApi({ error, setError: form.setError });
+    } finally {
+      setLoading(false);
     }
   }
   return (

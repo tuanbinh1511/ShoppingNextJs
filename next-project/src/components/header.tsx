@@ -1,3 +1,4 @@
+import ButtonLogout from "@/components/button-logout";
 import { ModeToggle } from "@/components/toggle-theme";
 import Link from "next/link";
 import React from "react";
@@ -12,6 +13,7 @@ export default function Header() {
         <li>
           <Link href="/register">Đăng kí</Link>
         </li>
+        <ButtonLogout />
       </ul>
       <ModeToggle />
     </div>

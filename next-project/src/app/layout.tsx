@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import AppProvider from "@/app/AppProvider";
 import { cookies } from "next/headers";
+import Header from "@/components/header";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -30,7 +31,8 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AppProvider initialSessionToken={sessionToken?.value}>
+          <AppProvider inititalSessionToken={sessionToken?.value}>
+            <Header />
             {children}
           </AppProvider>
         </ThemeProvider>
