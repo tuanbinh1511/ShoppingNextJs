@@ -42,9 +42,6 @@ export class EntityError extends HttpError {
     payload: EntityErrorPayload;
   }) {
     super({ status, payload });
-    if (status !== ENTITY_ERROR_STATUS) {
-      throw new Error("EntityError must have status 422");
-    }
     this.status = status;
     this.payload = payload;
   }
@@ -52,6 +49,7 @@ export class EntityError extends HttpError {
 
 class SessionToken {
   private token = "";
+  private _expiresAt = new Date().toISOString();
   get value() {
     return this.token;
   }
@@ -62,10 +60,19 @@ class SessionToken {
     }
     this.token = token;
   }
+  get expiresAt() {
+    return this._expiresAt;
+  }
+  set expiresAt(expiresAt: string) {
+    // Nếu gọi method này ở server thì sẽ bị lỗi
+    if (typeof window === "undefined") {
+      throw new Error("Cannot set token on server side");
+    }
+    this._expiresAt = expiresAt;
+  }
 }
 
 export const clientSessionToken = new SessionToken();
-
 let clientLogoutRequest: null | Promise<any> = null;
 
 const request = async <Response>(
@@ -106,6 +113,7 @@ const request = async <Response>(
     status: res.status,
     payload,
   };
+  // Interceptor là nời chúng ta xử lý request và response trước khi trả về cho phía component
   if (!res.ok) {
     if (res.status === ENTITY_ERROR_STATUS) {
       throw new EntityError(
@@ -115,18 +123,20 @@ const request = async <Response>(
         }
       );
     } else if (res.status === AUTHENTICATION_ERROR_STATUS) {
-      if (typeof window !== undefined) {
+      if (typeof window !== "undefined") {
         if (!clientLogoutRequest) {
-          await fetch("/api/auth/logout", {
+          clientLogoutRequest = fetch("/api/auth/logout", {
             method: "POST",
             body: JSON.stringify({ force: true }),
             headers: {
               ...baseHeaders,
             },
           });
+
           await clientLogoutRequest;
-          clientLogoutRequest = null;
           clientSessionToken.value = "";
+          clientSessionToken.expiresAt = new Date().toISOString();
+          clientLogoutRequest = null;
           location.href = "/login";
         }
       } else {
@@ -138,10 +148,8 @@ const request = async <Response>(
     } else {
       throw new HttpError(data);
     }
-    throw new HttpError(data);
   }
-
-  //logic run client
+  // Đảm bảo logic dưới đây chỉ chạy ở phía client (browser)
   if (typeof window !== "undefined") {
     if (
       ["auth/login", "auth/register"].some(
@@ -149,8 +157,10 @@ const request = async <Response>(
       )
     ) {
       clientSessionToken.value = (payload as LoginResType).data.token;
-    } else if ("auth/logout".includes(url)) {
+      clientSessionToken.expiresAt = (payload as LoginResType).data.expiresAt;
+    } else if ("auth/logout" === normalizePath(url)) {
       clientSessionToken.value = "";
+      clientSessionToken.expiresAt = new Date().toISOString();
     }
   }
   return data;

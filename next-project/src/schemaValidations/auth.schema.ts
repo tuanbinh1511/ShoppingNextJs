@@ -53,9 +53,3 @@ export type SlideSessionBodyType = z.TypeOf<typeof SlideSessionBody>;
 export const SlideSessionRes = RegisterRes;
 
 export type SlideSessionResType = z.TypeOf<typeof SlideSessionRes>;
-export const RefreshSessionBody = z.object({}).strict();
-
-export type RefreshSessionBodyType = z.TypeOf<typeof RefreshSessionBody>;
-export const RefreshSessionRes = RegisterRes;
-
-export type RefreshSessionResType = z.TypeOf<typeof RefreshSessionRes>;

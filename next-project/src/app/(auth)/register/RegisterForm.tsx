@@ -19,14 +19,16 @@ import {
 
 import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
-import authApiRequest from "@/apiRequest/auth";
 import { handleErrorApi } from "@/lib/utils";
 import { useState } from "react";
+import authApiRequest from "@/apiRequest/auth";
 
 const RegisterForm = () => {
+  const [loading, setLoading] = useState(false);
+
   const { toast } = useToast();
   const router = useRouter();
-  const [loading, setLoading] = useState<boolean>(false);
+
   const form = useForm<RegisterBodyType>({
     resolver: zodResolver(RegisterBody),
     defaultValues: {
@@ -43,13 +45,20 @@ const RegisterForm = () => {
     setLoading(true);
     try {
       const result = await authApiRequest.register(values);
+
+      await authApiRequest.auth({
+        sessionToken: result.payload.data.token,
+        expiresAt: result.payload.data.expiresAt,
+      });
       toast({
         description: result.payload.message,
       });
-      await authApiRequest.auth({ sessionToken: result.payload.data.token });
       router.push("/me");
     } catch (error: any) {
-      handleErrorApi({ error, setError: form.setError });
+      handleErrorApi({
+        error,
+        setError: form.setError,
+      });
     } finally {
       setLoading(false);
     }
